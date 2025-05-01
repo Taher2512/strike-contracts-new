@@ -30,7 +30,21 @@ pub fn process_distribute_prizes<'a, 'b, 'c, 'info>(
         &[match_pool.bump],
     ];
     let signer = &[&seeds[..]];
-
+    
+    // Process all token accounts first to map users to their token accounts
+    let mut user_token_accounts = std::collections::HashMap::new();
+    
+    for account in remaining_accounts.iter() {
+        if account.owner == &token::ID {
+            // Create a copy of the data that we can deserialize
+            let data = account.data.borrow();
+            if let Ok(token_account) = TokenAccount::try_deserialize(&mut &data[..]) {
+                user_token_accounts.insert(token_account.owner, account);
+            }
+        }
+    }
+    
+    // Now process the prizes without borrowing the same account multiple times
     for prize in prize_distributions {
         if prize.amount <= 0 {
             continue;
@@ -38,45 +52,30 @@ pub fn process_distribute_prizes<'a, 'b, 'c, 'info>(
 
         let winner_key = prize.user;
         
-        // Find the winner's token account
-        let mut winner_account_found = false;
-        for account in remaining_accounts {
-            if account.owner == &token::ID {
-                // Try to deserialize as token account
-                if let Ok(token_account) = TokenAccount::try_deserialize(&mut &account.data.borrow()[..]) {
-                    if token_account.owner == winner_key {
-                        // Found the right account, transfer tokens
-                        let transfer_cpi_accounts = Transfer {
-                            from: pool_token_info.clone(),
-                            to: account.clone(),
-                            authority: match_pool_info.clone(),
-                        };
-                        
-                        let cpi_ctx = CpiContext::new_with_signer(
-                            token_program_info.clone(),
-                            transfer_cpi_accounts,
-                            signer,
-                        );
-                        
-                        transfer(cpi_ctx, prize.amount)?;
-                        
-                        emit!(PrizeDistributedEvent {
-                            user: winner_key,
-                            match_id: match_pool.match_id.clone(),
-                            amount: prize.amount,
-                        });
-                        
-                        winner_account_found = true;
-                        break;
-                    }
-                }
-            }
-        }
-        
-        if !winner_account_found {
+        if let Some(winner_account) = user_token_accounts.get(&winner_key) {
+            // Found the right account, transfer tokens
+            let transfer_cpi_accounts = Transfer {
+                from: pool_token_info.clone(),
+                to: (*winner_account).clone(),
+                authority: match_pool_info.clone(),
+            };
+            
+            let cpi_ctx = CpiContext::new_with_signer(
+                token_program_info.clone(),
+                transfer_cpi_accounts,
+                signer,
+            );
+            
+            transfer(cpi_ctx, prize.amount)?;
+            
+            emit!(PrizeDistributedEvent {
+                user: winner_key,
+                match_id: match_pool.match_id.clone(),
+                amount: prize.amount,
+            });
+        } else {
             msg!("Winner account not found for {}", winner_key);
             // Skip if account not found
-            continue;
         }
     }
 
