@@ -18,7 +18,6 @@ import { BN } from "bn.js";
 import { expect } from "chai";
 
 describe("fantasy_cricket", () => {
-  // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(anchor.AnchorProvider.env());
 
