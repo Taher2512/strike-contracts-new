@@ -22,4 +22,8 @@ pub enum CustomError {
     WinnerAccountNotFound,
     #[msg("Pool not empty")]
     PoolNotEmpty,
+    #[msg("Insufficient balance for transfer")]
+    InsufficientBalance,
+    #[msg("Token transfer error")]
+    TokenTransferError,
 }

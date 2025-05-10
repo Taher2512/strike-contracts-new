@@ -30,5 +30,5 @@ pub struct EndMatch<'info> {
 
     pub admin: Signer<'info>,
 
-    pub sytem_program: Program<'info, System>,
+    pub system_program: Program<'info, System>,
 }

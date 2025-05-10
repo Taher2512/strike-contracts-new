@@ -5,14 +5,28 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-strike_contracts_new = "HhYHJWkj2rFNx2pHjasv3pqwGgqqRNqugUEwow2qgPZu"
+strike_contracts_new = "BL31QTN3JkKaWTrwKwrJEjgYUtVKz7gQodhNdb9dpSXZ"
+token-minter = "HfPTAU1bZBHPqcpEGweinAH9zsPafYnnaxk4k5xsTU3M"
+
+[programs.devnet]
+token-minter = "HfPTAU1bZBHPqcpEGweinAH9zsPafYnnaxk4k5xsTU3M"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[test]
+startup_wait = 5000
+shutdown_wait = 2000
+upgradeable = false
+
+[[test.genesis]]
+address = "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+program = "tests/fixtures/dlp.so"
+upgradeable = false
